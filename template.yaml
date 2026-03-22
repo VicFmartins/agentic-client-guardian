@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: agentic-client-guardian serverless deployment
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 30
+    MemorySize: 512
+
+Resources:
+  GuardianHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - "*"
+
+  AgenticClientGuardianFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: app.lambda_handler.handler
+      Environment:
+        Variables:
+          GEMINI_API_KEY: !Ref GeminiApiKey
+          GEMINI_MODEL: !Ref GeminiModel
+          ENVIRONMENT: !Ref EnvironmentName
+      Events:
+        HttpApiEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref GuardianHttpApi
+            Path: /{proxy+}
+            Method: ANY
+        HttpApiRootEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref GuardianHttpApi
+            Path: /
+            Method: ANY
+
+Parameters:
+  GeminiApiKey:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: Gemini API key used by the application.
+  GeminiModel:
+    Type: String
+    Default: gemini-2.5-flash
+    Description: Gemini model name.
+  EnvironmentName:
+    Type: String
+    Default: development
+    Description: Runtime environment name.
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${GuardianHttpApi}.execute-api.${AWS::Region}.amazonaws.com"

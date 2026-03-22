@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guardian — AI Fintech Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary":                  "#004bca",
+            "primary-container":        "#0061ff",
+            "on-primary":               "#ffffff",
+            "on-primary-container":     "#f1f2ff",
+            "secondary":                "#515f74",
+            "tertiary":                 "#6b21dc",
+            "tertiary-container":       "#8545f6",
+            "on-tertiary":              "#ffffff",
+            "error":                    "#ba1a1a",
+            "error-container":          "#ffdad6",
+            "background":               "#f8f9fa",
+            "surface":                  "#f8f9fa",
+            "surface-bright":           "#f8f9fa",
+            "surface-dim":              "#d9dadb",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low":    "#f3f4f5",
+            "surface-container":        "#edeeef",
+            "surface-container-high":   "#e7e8e9",
+            "surface-container-highest":"#e1e3e4",
+            "on-surface":               "#191c1d",
+            "on-surface-variant":       "#424656",
+            "outline":                  "#737687",
+            "outline-variant":          "#c2c6d9",
+            "inverse-surface":          "#2e3132",
+            "on-inverse-surface":       "#f0f1f2",
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      letter-spacing: -0.01em;
+      background: #f8f9fa;
+      color: #191c1d;
+      height: 100%;
+    }
+
+    .headline { letter-spacing: -0.02em; }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+    .icon-filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+    /* ── Views ─────────────────────────────────────────────────────────────── */
+    .view { display: none; }
+    .view.active { display: block; animation: fadeUp 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    /* ── Skeleton shimmer ──────────────────────────────────────────────────── */
+    @keyframes shimmer {
+      0%   { background-position: -800px 0; }
+      100% { background-position:  800px 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, #edeeef 25%, #e4e5e6 50%, #edeeef 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.4s infinite linear;
+      border-radius: 0.75rem;
+    }
+
+    /* ── Gauge SVG ──────────────────────────────────────────────────────────── */
+    .gauge-track { fill: none; stroke: #edeeef; stroke-width: 14; stroke-linecap: round; }
+    .gauge-fill  { fill: none; stroke-width: 14; stroke-linecap: round; transition: stroke-dashoffset 0.9s cubic-bezier(0.4, 0, 0.2, 1); }
+
+    /* ── Ring chart ─────────────────────────────────────────────────────────── */
+    .ring-track { fill: none; stroke: #edeeef; stroke-width: 7; }
+    .ring-fill  { fill: none; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 0.9s cubic-bezier(0.4, 0, 0.2, 1); }
+
+    /* ── Priority / Churn badges ────────────────────────────────────────────── */
+    .badge-urgent   { background: #ffdad6; color: #ba1a1a; }
+    .badge-critical { background: #ffdad6; color: #ba1a1a; }
+    .badge-high     { background: #fef3c7; color: #b45309; }
+    .badge-medium   { background: #dbeafe; color: #1d4ed8; }
+    .badge-low      { background: #dcfce7; color: #15803d; }
+
+    /* ── Sidebar nav active state ───────────────────────────────────────────── */
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.75rem; font-weight: 500; color: #424656; transition: all 0.2s; cursor: pointer; text-decoration: none; }
+    .nav-item:hover { color: #191c1d; transform: translateX(3px); }
+    .nav-item.active { background: white; color: #004bca; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transform: none; }
+
+    /* ── Toast ──────────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      display: flex; align-items: center; gap: 0.75rem;
+      background: #2e3132; color: #f0f1f2;
+      padding: 1rem 1.5rem; border-radius: 1.25rem;
+      font-weight: 600; font-size: 0.875rem;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+      transform: translateY(120px);
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 9999;
+    }
+    #toast.show { transform: translateY(0); }
+
+    /* ── Custom scrollbar ───────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #c2c6d9; border-radius: 2px; }
+
+    /* ── Spin animation ─────────────────────────────────────────────────────── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .animate-spin { animation: spin 1s linear infinite; }
+
+    /* ── Filter tab active ──────────────────────────────────────────────────── */
+    .filter-tab { padding: 0.5rem 1.25rem; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 500; color: #424656; cursor: pointer; transition: all 0.15s; border: none; background: transparent; }
+    .filter-tab:hover { color: #191c1d; }
+    .filter-tab.active { background: white; color: #004bca; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+    /* ── Buttons ────────────────────────────────────────────────────────────── */
+    .btn-primary {
+      background: linear-gradient(135deg, #004bca, #0061ff);
+      color: white; font-weight: 700; border: none; cursor: pointer;
+      padding: 0.75rem 1.5rem; border-radius: 0.875rem;
+      box-shadow: 0 8px 24px rgba(0, 75, 202, 0.22);
+      transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-primary:hover { box-shadow: 0 12px 32px rgba(0, 75, 202, 0.32); transform: translateY(-1px); }
+    .btn-primary:active { transform: scale(0.97); }
+
+    .btn-secondary {
+      background: #e1e3e4; color: #191c1d; font-weight: 600; border: none; cursor: pointer;
+      padding: 0.625rem 1.25rem; border-radius: 9999px;
+      transition: all 0.15s; display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-secondary:hover { background: #d9dadb; }
+    .btn-secondary:active { transform: scale(0.97); }
+
+    .btn-ghost {
+      background: transparent; border: none; cursor: pointer;
+      padding: 0.5rem; border-radius: 9999px; color: #424656;
+      transition: all 0.15s; display: inline-flex; align-items: center;
+    }
+    .btn-ghost:hover { background: #edeeef; color: #191c1d; }
+  </style>
+</head>
+
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════════════════════════════════════════ -->
+<aside style="
+  position: fixed; left: 0; top: 0;
+  width: 256px; height: 100vh;
+  background: #f3f4f5;
+  display: flex; flex-direction: column;
+  padding: 1.5rem; gap: 2rem;
+  box-shadow: 32px 0 64px rgba(25,28,29,0.04);
+  z-index: 50;
+">
+  <!-- Logo -->
+  <div>
+    <div class="headline" style="font-size: 1.5rem; font-weight: 900; background: linear-gradient(135deg, #004bca, #0061ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Guardian</div>
+    <div style="font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.12em; color: #424656; font-weight: 700; opacity: 0.65; margin-top: 2px;">AI Fintech Engine</div>
+  </div>
+
+  <!-- Nav -->
+  <nav style="flex: 1; display: flex; flex-direction: column; gap: 0.25rem;">
+    <a class="nav-item active" id="nav-priorities" onclick="navigate('priorities'); return false;" href="#">
+      <span class="material-symbols-outlined">dashboard</span>
+      <span>Dashboard</span>
+    </a>
+    <a class="nav-item" id="nav-clients" onclick="navigate('clients'); return false;" href="#">
+      <span class="material-symbols-outlined">group</span>
+      <span>Clients</span>
+    </a>
+    <a class="nav-item" id="nav-insights" onclick="navigate('insights'); return false;" href="#">
+      <span class="material-symbols-outlined">analytics</span>
+      <span>Insights</span>
+    </a>
+  </nav>
+
+  <!-- CTA -->
+  <button class="btn-primary" style="width: 100%; justify-content: center; border-radius: 0.875rem;">
+    <span class="material-symbols-outlined" style="font-size: 1rem;">add</span>
+    New Analysis
+  </button>
+
+  <!-- Bottom links -->
+  <div style="border-top: 1px solid rgba(194,198,217,0.15); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.25rem;">
+    <a class="nav-item" href="#" style="font-size: 0.875rem;">
+      <span class="material-symbols-outlined" style="font-size: 1.1rem;">help</span>
+      <span>Help</span>
+    </a>
+    <a class="nav-item" href="#" style="font-size: 0.875rem;">
+      <span class="material-symbols-outlined" style="font-size: 1.1rem;">logout</span>
+      <span>Logout</span>
+    </a>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MAIN CANVAS
+═══════════════════════════════════════════════════════════════════════════ -->
+<main style="margin-left: 256px; min-height: 100vh; display: flex; flex-direction: column;">
+
+  <!-- ── Top Bar ──────────────────────────────────────────────────────────── -->
+  <header style="
+    position: sticky; top: 0; z-index: 40;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 2rem;
+    background: rgba(248,249,250,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  ">
+    <div style="display: flex; align-items: center; gap: 1.5rem;">
+      <span id="page-title" class="headline" style="font-size: 1.125rem; font-weight: 700;">Agentic Client Guardian</span>
+      <div style="position: relative;">
+        <span class="material-symbols-outlined" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #424656;">search</span>
+        <input id="search-input" type="text" placeholder="Buscar clientes..."
+          style="background: #e7e8e9; border: none; border-radius: 9999px; padding: 0.5rem 1rem 0.5rem 2.5rem; font-size: 0.875rem; width: 18rem; outline: none; font-family: inherit; color: #191c1d;">
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <button class="btn-ghost"><span class="material-symbols-outlined">notifications</span></button>
+      <button class="btn-ghost"><span class="material-symbols-outlined">settings</span></button>
+      <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #004bca, #0061ff); display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem; font-weight: 800;">A</div>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       VIEW: DAILY PRIORITIES
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div id="view-priorities" class="view active" style="padding: 2rem; max-width: 1200px; width: 100%;">
+
+    <!-- Page header -->
+    <div style="margin-bottom: 2rem;">
+      <h1 class="headline" style="font-size: 2.5rem; font-weight: 900; color: #191c1d;">Daily Priorities</h1>
+      <p style="color: #424656; margin-top: 0.25rem;">Focus on high-impact interventions curated by AI.</p>
+    </div>
+
+    <!-- Bento Stats -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 2rem;">
+      <!-- Total -->
+      <div style="background: white; padding: 1.5rem; border-radius: 2rem; box-shadow: 0 2px 24px rgba(25,28,29,0.04); display: flex; flex-direction: column; justify-content: space-between; min-height: 9rem;">
+        <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: #424656; font-weight: 700;">Total Clients</span>
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-top: 1rem;">
+          <span id="stat-total" class="headline" style="font-size: 3rem; font-weight: 900; color: #191c1d;">—</span>
+          <div style="width: 3rem; height: 3rem; border-radius: 50%; background: rgba(0,75,202,0.07); display: flex; align-items: center; justify-content: center; color: #004bca;">
+            <span class="material-symbols-outlined">groups</span>
+          </div>
+        </div>
+      </div>
+      <!-- High risk -->
+      <div style="background: white; padding: 1.5rem; border-radius: 2rem; border-left: 4px solid rgba(186,26,26,0.25); box-shadow: 0 2px 24px rgba(25,28,29,0.04); display: flex; flex-direction: column; justify-content: space-between; min-height: 9rem;">
+        <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: #424656; font-weight: 700;">High-Risk Clients</span>
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-top: 1rem;">
+          <span id="stat-highrisk" class="headline" style="font-size: 3rem; font-weight: 900; color: #ba1a1a;">—</span>
+          <div style="width: 3rem; height: 3rem; border-radius: 50%; background: rgba(186,26,26,0.07); display: flex; align-items: center; justify-content: center; color: #ba1a1a;">
+            <span class="material-symbols-outlined">warning</span>
+          </div>
+        </div>
+      </div>
+      <!-- Urgent actions -->
+      <div style="background: linear-gradient(135deg, #6b21dc, #8545f6); padding: 1.5rem; border-radius: 2rem; box-shadow: 0 16px 40px rgba(107,33,220,0.22); display: flex; flex-direction: column; justify-content: space-between; min-height: 9rem;">
+        <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.75); font-weight: 700;">Urgent Actions</span>
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-top: 1rem;">
+          <span id="stat-urgent" class="headline" style="font-size: 3rem; font-weight: 900; color: white;">—</span>
+          <div style="width: 3rem; height: 3rem; border-radius: 50%; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; color: white;">
+            <span class="material-symbols-outlined icon-filled">bolt</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter + Sort bar -->
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; align-items: center; padding: 0.25rem; background: #edeeef; border-radius: 1.25rem; gap: 0.125rem;">
+        <button class="filter-tab active" data-filter="all">All</button>
+        <button class="filter-tab" data-filter="URGENT">Urgent</button>
+        <button class="filter-tab" data-filter="HIGH">High</button>
+        <button class="filter-tab" data-filter="MEDIUM">Medium</button>
+        <button class="filter-tab" data-filter="LOW">Low</button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.625rem;">
+        <span style="font-size: 0.875rem; color: #424656;">Sort:</span>
+        <select id="sort-select" style="background: white; border: none; border-radius: 0.75rem; padding: 0.5rem 0.875rem; font-size: 0.875rem; font-weight: 700; color: #191c1d; box-shadow: 0 1px 4px rgba(0,0,0,0.07); outline: none; font-family: inherit; cursor: pointer;">
+          <option value="priority">Priority Score</option>
+          <option value="churn">Churn Score</option>
+          <option value="name">Name A–Z</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Priorities list -->
+    <div id="priorities-list" style="display: flex; flex-direction: column; gap: 0.875rem;">
+      <div class="skeleton" style="height: 6rem;"></div>
+      <div class="skeleton" style="height: 6rem;"></div>
+      <div class="skeleton" style="height: 6rem;"></div>
+    </div>
+
+    <!-- AI Insight panel (hidden until loaded) -->
+    <div id="ai-insight-panel" style="display: none; margin-top: 3rem; background: rgba(255,255,255,0.5); border: 2px dashed rgba(194,198,217,0.35); border-radius: 2.5rem; padding: 2rem;">
+      <div style="display: flex; align-items: flex-start; gap: 1.5rem;">
+        <div style="width: 4rem; height: 4rem; border-radius: 1.25rem; background: linear-gradient(135deg, #6b21dc, #8545f6); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 8px 24px rgba(107,33,220,0.2);">
+          <span class="material-symbols-outlined icon-filled" style="font-size: 1.75rem; color: white;">psychology</span>
+        </div>
+        <div>
+          <h2 class="headline" style="font-size: 1.5rem; font-weight: 900; margin-bottom: 0.75rem;">AI Agent Insight</h2>
+          <p id="ai-insight-text" style="color: #424656; line-height: 1.65; max-width: 56rem;"></p>
+          <button style="margin-top: 1rem; display: inline-flex; align-items: center; gap: 0.375rem; color: #6b21dc; font-weight: 700; font-size: 0.875rem; background: none; border: none; cursor: pointer;" onmouseover="this.style.transform='translateX(3px)'" onmouseout="this.style.transform='none'" style="transition: transform 0.2s">
+            View Bulk Action Plan
+            <span class="material-symbols-outlined" style="font-size: 1rem;">arrow_forward</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <div id="priorities-error" style="display: none; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 2rem; gap: 1rem; text-align: center;">
+      <div style="width: 4rem; height: 4rem; border-radius: 1rem; background: #ffdad6; display: flex; align-items: center; justify-content: center;">
+        <span class="material-symbols-outlined" style="color: #ba1a1a; font-size: 1.75rem;">signal_disconnected</span>
+      </div>
+      <h3 style="font-size: 1.125rem; font-weight: 700;">API Unavailable</h3>
+      <p style="color: #424656; font-size: 0.875rem; max-width: 24rem; line-height: 1.6;">
+        Could not connect to the backend. Make sure <code style="background: #edeeef; padding: 0.125rem 0.375rem; border-radius: 0.375rem; font-size: 0.8rem;">uvicorn app.main:app</code> is running on port 8000.
+      </p>
+      <button class="btn-primary" onclick="loadPriorities()" style="margin-top: 0.5rem;">Retry</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       VIEW: INSIGHTS
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div id="view-insights" class="view" style="padding: 2rem; max-width: 1200px; width: 100%;">
+    <div style="margin-bottom: 2rem;">
+      <h1 class="headline" style="font-size: 2.5rem; font-weight: 900; color: #191c1d;">Insights</h1>
+      <p style="color: #424656; margin-top: 0.25rem;">Aggregate intelligence across your entire client portfolio.</p>
+    </div>
+
+    <!-- Top stat row -->
+    <div id="insights-stats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-bottom: 2rem;">
+      <div class="skeleton" style="height: 7rem; border-radius: 1.5rem;"></div>
+      <div class="skeleton" style="height: 7rem; border-radius: 1.5rem;"></div>
+      <div class="skeleton" style="height: 7rem; border-radius: 1.5rem;"></div>
+      <div class="skeleton" style="height: 7rem; border-radius: 1.5rem;"></div>
+    </div>
+
+    <!-- Churn distribution -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+
+      <!-- Churn level breakdown -->
+      <div style="background: white; padding: 1.75rem; border-radius: 1.5rem; box-shadow: 0 2px 16px rgba(25,28,29,0.04); border: 1px solid rgba(194,198,217,0.12);">
+        <h3 style="font-weight: 700; font-size: 1rem; margin-bottom: 1.25rem;">Churn Level Distribution</h3>
+        <div id="insights-churn-bars" style="display: flex; flex-direction: column; gap: 1rem;">
+          <div class="skeleton" style="height: 2.5rem; border-radius: 0.625rem;"></div>
+          <div class="skeleton" style="height: 2.5rem; border-radius: 0.625rem;"></div>
+          <div class="skeleton" style="height: 2.5rem; border-radius: 0.625rem;"></div>
+          <div class="skeleton" style="height: 2.5rem; border-radius: 0.625rem;"></div>
+        </div>
+      </div>
+
+      <!-- Priority level breakdown -->
+      <div style="background: white; padding: 1.75rem; border-radius: 1.5rem; box-shadow: 0 2px 16px rgba(25,28,29,0.04); border: 1px solid rgba(194,198,217,0.12);">
+        <h3 style="font-weight: 700; font-size: 1rem; margin-bottom: 1.25rem;">Priority Level Distribution</h3>
+        <div id="insights-priority-bars" style="display: flex; flex-direction: column; gap: 1rem;">
+          <div class="skeleton" style="height: 2.5rem; border-radius: 0.625rem;"></div>
+          <div class="skeleton" style="height: 2.5rem; border-radius: 0.625rem;"></div>
+          <div class="skeleton" style="height: 2.5rem; border-radius: 0.625rem;"></div>
+          <div class="skeleton" style="height: 2.5rem; border-radius: 0.625rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Channel + top clients -->
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.25rem;">
+
+      <!-- Suggested channels -->
+      <div style="background: white; padding: 1.75rem; border-radius: 1.5rem; box-shadow: 0 2px 16px rgba(25,28,29,0.04); border: 1px solid rgba(194,198,217,0.12);">
+        <h3 style="font-weight: 700; font-size: 1rem; margin-bottom: 1.25rem;">Recommended Channels</h3>
+        <div id="insights-channels" style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <div class="skeleton" style="height: 2rem; border-radius: 0.5rem;"></div>
+          <div class="skeleton" style="height: 2rem; border-radius: 0.5rem;"></div>
+          <div class="skeleton" style="height: 2rem; border-radius: 0.5rem;"></div>
+        </div>
+      </div>
+
+      <!-- Top 5 highest churn -->
+      <div style="background: white; padding: 1.75rem; border-radius: 1.5rem; box-shadow: 0 2px 16px rgba(25,28,29,0.04); border: 1px solid rgba(194,198,217,0.12);">
+        <h3 style="font-weight: 700; font-size: 1rem; margin-bottom: 1.25rem;">Top 5 — Highest Churn Score</h3>
+        <div id="insights-top5" style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <div class="skeleton" style="height: 2.5rem; border-radius: 0.625rem;"></div>
+          <div class="skeleton" style="height: 2.5rem; border-radius: 0.625rem;"></div>
+          <div class="skeleton" style="height: 2.5rem; border-radius: 0.625rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Coverage banner -->
+    <div id="insights-ai-banner" style="display: none; margin-top: 1.25rem; padding: 1.5rem 2rem; border-radius: 1.5rem; background: linear-gradient(135deg, rgba(107,33,220,0.06), rgba(133,69,246,0.04)); border: 1px solid rgba(107,33,220,0.12); display: flex; align-items: center; gap: 1.25rem;">
+      <div style="width: 3rem; height: 3rem; border-radius: 0.875rem; background: linear-gradient(135deg, #6b21dc, #8545f6); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <span class="material-symbols-outlined icon-filled" style="color: white; font-size: 1.25rem;">smart_toy</span>
+      </div>
+      <div>
+        <div style="font-weight: 700; font-size: 0.9375rem; margin-bottom: 0.25rem;">Gemini AI Coverage</div>
+        <p id="insights-ai-text" style="font-size: 0.875rem; color: #424656; line-height: 1.5;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       VIEW: CLIENTS LIST
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div id="view-clients" class="view" style="padding: 2rem; max-width: 1200px; width: 100%;">
+    <div style="margin-bottom: 2rem;">
+      <h1 class="headline" style="font-size: 2.5rem; font-weight: 900; color: #191c1d;">Clients</h1>
+      <p style="color: #424656; margin-top: 0.25rem;">All simulated clients in the MVP dataset.</p>
+    </div>
+    <div id="clients-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1.25rem;">
+      <div class="skeleton" style="height: 8rem; border-radius: 1.5rem;"></div>
+      <div class="skeleton" style="height: 8rem; border-radius: 1.5rem;"></div>
+      <div class="skeleton" style="height: 8rem; border-radius: 1.5rem;"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       VIEW: CLIENT DETAIL
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div id="view-client-detail" class="view" style="padding: 2rem; max-width: 1200px; width: 100%;">
+
+    <!-- Breadcrumb -->
+    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #424656; margin-bottom: 2rem;">
+      <button onclick="navigate('priorities')" style="background: none; border: none; cursor: pointer; color: #424656; font-weight: 500; font-family: inherit;" onmouseover="this.style.color='#191c1d'" onmouseout="this.style.color='#424656'">Dashboard</button>
+      <span class="material-symbols-outlined" style="font-size: 0.875rem;">chevron_right</span>
+      <span id="detail-breadcrumb" style="color: #191c1d;">Client</span>
+    </div>
+
+    <!-- Profile header -->
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #edeeef; margin-bottom: 1.75rem;">
+      <div style="display: flex; gap: 1.5rem; align-items: center;">
+        <div id="detail-avatar-bg" style="width: 6rem; height: 6rem; border-radius: 1.25rem; background: linear-gradient(135deg, #004bca, #0061ff); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 12px 32px rgba(0,75,202,0.18);">
+          <span id="detail-avatar" style="font-size: 2.25rem; font-weight: 900; color: white;">?</span>
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+            <h2 id="detail-name" class="headline" style="font-size: 2.5rem; font-weight: 900; color: #191c1d;">Loading...</h2>
+            <span id="detail-segment-badge" style="padding: 0.25rem 0.875rem; background: rgba(107,33,220,0.08); color: #6b21dc; font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; border-radius: 9999px;"></span>
+          </div>
+          <p id="detail-risk" style="color: #424656; font-weight: 500; display: flex; align-items: center; gap: 0.375rem; margin-bottom: 0.25rem; font-size: 0.9375rem;">—</p>
+          <p id="detail-meta" style="font-size: 0.8125rem; color: #424656;">—</p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <button class="btn-secondary" onclick="navigate('action-panel')">
+          <span class="material-symbols-outlined" style="font-size: 1rem;">mail</span>
+          Compose Message
+        </button>
+        <button class="btn-primary" onclick="navigate('action-panel')" style="border-radius: 9999px; padding: 0.625rem 1.5rem;">
+          Execute Action
+        </button>
+      </div>
+    </div>
+
+    <!-- Skeleton -->
+    <div id="detail-skeleton">
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+        <div class="skeleton" style="height: 16rem; border-radius: 1.25rem;"></div>
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <div class="skeleton" style="height: 8rem; border-radius: 1.25rem;"></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+            <div class="skeleton" style="height: 10rem; border-radius: 1.25rem;"></div>
+            <div class="skeleton" style="height: 10rem; border-radius: 1.25rem;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="skeleton" style="height: 14rem; border-radius: 1.5rem;"></div>
+    </div>
+
+    <!-- Detail grid (hidden until data loaded) -->
+    <div id="detail-grid" style="display: none;">
+
+      <!-- Row 1: Gauge + AI + Signals -->
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+
+        <!-- Churn Risk Card -->
+        <div style="background: white; padding: 2rem; border-radius: 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; box-shadow: 0 2px 16px rgba(25,28,29,0.04); border: 1px solid rgba(194,198,217,0.12);">
+          <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: #424656; font-weight: 700;">Churn Risk Index</span>
+          <!-- SVG Gauge: semi-circle, path from (20,100) to (180,100) on r=80 -->
+          <div style="position: relative; line-height: 0;">
+            <svg width="200" height="108" viewBox="0 0 200 108">
+              <path d="M 20 100 A 80 80 0 0 1 180 100" class="gauge-track"/>
+              <path id="gauge-path" d="M 20 100 A 80 80 0 0 1 180 100" class="gauge-fill"
+                stroke="#ba1a1a"
+                stroke-dasharray="251.3"
+                stroke-dashoffset="251.3"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 0.5rem;">
+              <span id="detail-churn-score" class="headline" style="font-size: 2.25rem; font-weight: 900; color: #ba1a1a;">—%</span>
+            </div>
+          </div>
+          <span id="detail-churn-badge" style="font-size: 0.8125rem; font-weight: 600; padding: 0.375rem 1rem; border-radius: 9999px;">—</span>
+          <div style="width: 100%; height: 1px; background: #edeeef;"></div>
+          <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 0.5rem;">
+            <div>
+              <div style="font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.1em; color: #424656; font-weight: 700;">Priority Score</div>
+              <p id="detail-priority-score" class="headline" style="font-size: 1.5rem; font-weight: 700; color: #191c1d; margin-top: 0.125rem;">—</p>
+            </div>
+            <div style="width: 2.5rem; height: 2.5rem; border-radius: 50%; background: rgba(0,75,202,0.06); display: flex; align-items: center; justify-content: center; color: #004bca;">
+              <span class="material-symbols-outlined">bolt</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+
+          <!-- AI Narrative -->
+          <div style="background: white; padding: 2rem; border-radius: 1.5rem; position: relative; overflow: hidden; box-shadow: 0 2px 16px rgba(25,28,29,0.04); border: 1px solid rgba(194,198,217,0.12);">
+            <span class="material-symbols-outlined icon-filled" style="position: absolute; top: 1rem; right: 1rem; font-size: 4rem; color: rgba(107,33,220,0.1);">smart_toy</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+              <span class="material-symbols-outlined" style="color: #6b21dc;">neurology</span>
+              <h3 style="font-weight: 700; font-size: 1.0625rem;">Guardian AI Deep-Dive</h3>
+            </div>
+            <p id="detail-ai-summary" style="color: #424656; line-height: 1.7; font-style: italic; font-size: 1rem;">Analyzing...</p>
+            <div style="margin-top: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+              <div style="display: flex; margin-left: -0.25rem;">
+                <div style="width: 1.75rem; height: 1.75rem; border-radius: 50%; border: 2px solid white; background: rgba(0,75,202,0.1); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 900; color: #004bca; z-index: 2;">DS</div>
+                <div style="width: 1.75rem; height: 1.75rem; border-radius: 50%; border: 2px solid white; background: rgba(107,33,220,0.1); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 900; color: #6b21dc; margin-left: -0.5rem; z-index: 1;">ML</div>
+              </div>
+              <span style="font-size: 0.75rem; color: #424656; font-weight: 500;">Analyzed via Multi-Agent Sentiment Engine</span>
+            </div>
+          </div>
+
+          <!-- Signals + Life Event row -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+
+            <!-- Risk signals -->
+            <div style="background: white; padding: 1.5rem; border-radius: 1.5rem; box-shadow: 0 2px 16px rgba(25,28,29,0.04); border: 1px solid rgba(194,198,217,0.12);">
+              <h4 style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: #424656; font-weight: 700; margin-bottom: 1rem;">Detected Risk Signals</h4>
+              <ul id="detail-signals" style="display: flex; flex-direction: column; gap: 0.875rem; list-style: none;"></ul>
+            </div>
+
+            <!-- Suggested action -->
+            <div id="detail-action-card" style="padding: 1.5rem; border-radius: 1.5rem; background: rgba(0,75,202,0.04); border: 1px solid rgba(0,75,202,0.1); display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                  <span class="material-symbols-outlined" style="color: #004bca; font-size: 1rem;">auto_awesome</span>
+                  <h4 style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: #004bca; font-weight: 700;">Suggested Action</h4>
+                </div>
+                <h5 id="detail-action-title" class="headline" style="font-size: 1.125rem; font-weight: 900; color: #191c1d; margin-bottom: 0.5rem; line-height: 1.3;">—</h5>
+                <p id="detail-main-reason" style="font-size: 0.8125rem; color: #424656; line-height: 1.6;">—</p>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+                <span class="material-symbols-outlined" style="color: #004bca; font-size: 0.875rem;">route</span>
+                <span id="detail-channel" style="font-size: 0.75rem; font-weight: 700; color: #004bca;">Channel: —</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Strategic Intervention (full width) -->
+      <div style="border-radius: 2rem; padding: 2rem; background: rgba(231,232,233,0.6);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <h3 class="headline" style="font-size: 1.5rem; font-weight: 900;">Strategic Intervention Path</h3>
+          <span id="detail-retention-chip" style="padding: 0.375rem 1rem; background: white; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.07);">
+            Retention Probability: <span style="color: #ba1a1a;">—%</span>
+          </span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div style="background: white; padding: 1.5rem; border-radius: 1.25rem; border: 1px solid rgba(194,198,217,0.06);">
+            <h4 style="font-size: 0.875rem; font-weight: 700; margin-bottom: 1rem;">Recommended Action</h4>
+            <p id="detail-intervention-text" style="font-size: 0.875rem; color: #424656; margin-bottom: 1.25rem; line-height: 1.6;">—</p>
+            <div id="detail-reasons-list" style="display: flex; flex-direction: column; gap: 0.625rem;"></div>
+          </div>
+          <div style="background: rgba(0,75,202,0.04); padding: 1.5rem; border-radius: 1.25rem;">
+            <h4 style="font-size: 0.875rem; font-weight: 700; margin-bottom: 1rem;">Recent Interactions</h4>
+            <div id="detail-interactions" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 9rem; overflow-y: auto; font-size: 0.8125rem; color: #424656;"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /detail-grid -->
+
+    <!-- Error state -->
+    <div id="detail-error" style="display: none; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 2rem; gap: 1rem; text-align: center;">
+      <div style="width: 4rem; height: 4rem; border-radius: 1rem; background: #ffdad6; display: flex; align-items: center; justify-content: center;">
+        <span class="material-symbols-outlined" style="color: #ba1a1a; font-size: 1.75rem;">error</span>
+      </div>
+      <h3 style="font-size: 1.125rem; font-weight: 700;">Analysis Failed</h3>
+      <p id="detail-error-msg" style="color: #424656; font-size: 0.875rem; max-width: 24rem; line-height: 1.6;">—</p>
+      <button class="btn-primary" onclick="navigate('priorities')">Back to Dashboard</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       VIEW: ACTION PANEL
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div id="view-action-panel" class="view" style="padding: 3rem 2.5rem; max-width: 1100px; width: 100%;">
+
+    <!-- Header -->
+    <section style="display: flex; align-items: flex-start; justify-content: space-between; gap: 2rem; margin-bottom: 2.5rem; flex-wrap: wrap;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.625rem;">
+          <span style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #6b21dc;">Execution Phase</span>
+          <span style="color: rgba(66,70,86,0.3); font-size: 0.75rem;">•</span>
+          <span style="font-size: 0.75rem; font-weight: 500; color: #424656;">Step 4 of 6</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+          <button onclick="navigate('client-detail')" class="btn-ghost">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+          <h2 id="action-client-name" class="headline" style="font-size: 2.5rem; font-weight: 800; color: #191c1d;">—</h2>
+        </div>
+        <p id="action-subtitle" style="color: #424656; font-weight: 500; font-size: 0.9375rem;">Strategic Portfolio Adjustment &amp; Relationship Touchpoint</p>
+      </div>
+      <div style="display: flex; gap: 1rem; flex-shrink: 0;">
+        <div style="background: white; padding: 1.25rem 1.5rem; border-radius: 0.875rem; border: 1px solid rgba(194,198,217,0.08); box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+          <div style="font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #424656; margin-bottom: 0.25rem;">Churn Risk</div>
+          <div id="action-churn-badge" style="font-size: 1.125rem; font-weight: 700;">—</div>
+        </div>
+        <div style="background: white; padding: 1.25rem 1.5rem; border-radius: 0.875rem; border: 1px solid rgba(194,198,217,0.08); box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+          <div style="font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #424656; margin-bottom: 0.25rem;">Last Contact</div>
+          <div id="action-last-contact" style="font-size: 1.125rem; font-weight: 700;">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main grid -->
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+
+      <!-- Left: Channel selector -->
+      <div style="background: #f3f4f5; padding: 2rem; border-radius: 1.5rem; border: 1px solid rgba(194,198,217,0.12); display: flex; flex-direction: column; gap: 1.5rem;">
+        <span class="material-symbols-outlined" style="font-size: 2.75rem; color: #004bca;">rocket_launch</span>
+        <div>
+          <h3 id="action-channel-title" class="headline" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">—</h3>
+          <p id="action-channel-desc" style="font-size: 0.875rem; color: #424656; line-height: 1.6;">AI models suggest a direct touchpoint to mitigate churn risk and initiate the recommended strategy.</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <label style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: #424656;">Preferred Channels</label>
+          <div id="channels-list" style="display: flex; flex-direction: column; gap: 0.625rem;"></div>
+        </div>
+      </div>
+
+      <!-- Right: Message editor -->
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+
+        <!-- Editor card -->
+        <div style="background: white; border-radius: 1.5rem; overflow: hidden; box-shadow: 0 32px 64px -12px rgba(0,75,202,0.07); border: 1px solid rgba(194,198,217,0.08);">
+          <!-- Toolbar -->
+          <div style="padding: 1.25rem 2rem; border-bottom: 1px solid #edeeef; background: #f8f9fa; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #6b21dc;"></div>
+              <span style="font-size: 0.875rem; font-weight: 700;">AI Generated Script</span>
+              <span id="action-ai-badge" style="font-size: 0.75rem; color: #424656; font-weight: 500;"></span>
+            </div>
+            <div style="display: flex; gap: 0.25rem;">
+              <button onclick="regenerateMessage()" title="Regenerate message" class="btn-ghost" style="border-radius: 0.625rem; padding: 0.375rem 0.625rem;">
+                <span id="regen-icon" class="material-symbols-outlined" style="font-size: 1.25rem;">auto_fix_high</span>
+              </button>
+            </div>
+          </div>
+          <!-- Textarea -->
+          <div style="padding: 2rem;">
+            <textarea id="message-editor"
+              style="width: 100%; min-height: 14rem; background: transparent; border: none; outline: none; resize: none; font-family: inherit; font-size: 1.0625rem; font-weight: 500; line-height: 1.75; color: #191c1d; letter-spacing: -0.01em; padding: 0;"
+              placeholder="Generating personalized message..."></textarea>
+            <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+              <span id="char-count" style="font-size: 0.75rem; color: #424656;">0 characters</span>
+            </div>
+            <!-- Action bar -->
+            <div style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+              <button class="btn-secondary" onclick="copyMessage()">
+                <span class="material-symbols-outlined" style="font-size: 0.875rem;">content_copy</span>
+                Copy Message
+              </button>
+              <button class="btn-secondary">
+                <span class="material-symbols-outlined" style="font-size: 0.875rem;">event_repeat</span>
+                Schedule Follow-up
+              </button>
+              <div style="flex: 1;"></div>
+              <button class="btn-primary" onclick="markContacted()">
+                <span class="material-symbols-outlined">verified</span>
+                Mark as Contacted
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Intelligence tips row -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+
+          <!-- Tip -->
+          <div style="padding: 1.5rem; border-radius: 1.25rem; background: rgba(107,33,220,0.04); border: 1px solid rgba(107,33,220,0.12);">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+              <span class="material-symbols-outlined icon-filled" style="color: #6b21dc; font-size: 1rem;">psychology</span>
+              <span style="font-size: 0.875rem; font-weight: 700; color: #6b21dc;">Intelligence Tip</span>
+            </div>
+            <p id="action-tip" style="font-size: 0.875rem; color: #424656; line-height: 1.6; font-weight: 500;">Analyzing client patterns...</p>
+          </div>
+
+          <!-- Conversion ring -->
+          <div style="padding: 1.5rem; border-radius: 1.25rem; background: #f3f4f5; display: flex; align-items: center; gap: 1rem;">
+            <div style="position: relative; flex-shrink: 0;">
+              <svg width="60" height="60" viewBox="0 0 60 60">
+                <circle cx="30" cy="30" r="23" class="ring-track"/>
+                <circle id="conversion-ring" cx="30" cy="30" r="23" class="ring-fill"
+                  stroke="#004bca"
+                  stroke-dasharray="144.5"
+                  stroke-dashoffset="144.5"
+                  transform="rotate(-90 30 30)"/>
+              </svg>
+              <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
+                <span id="action-conversion" style="font-size: 0.65rem; font-weight: 900; color: #191c1d;">—%</span>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 0.875rem; font-weight: 700; margin-bottom: 0.125rem;">Conversion Probability</div>
+              <div style="font-size: 0.75rem; color: #424656;">Based on historical outreach</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast -->
+<div id="toast">
+  <span id="toast-icon" class="material-symbols-outlined" style="font-size: 1.125rem;">check_circle</span>
+  <span id="toast-msg">Done</span>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     APPLICATION LOGIC
+═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+// When served from FastAPI (/ui), use relative URLs.
+// When opened standalone (file://) or from a separate dev server, point to the API host.
+const DEMO_API = 'https://xkskagocii.execute-api.us-east-1.amazonaws.com';
+const API = (location.protocol === 'file:' || location.port === '5173' || location.hostname === '127.0.0.1' || location.hostname === 'localhost')
+  ? 'http://127.0.0.1:8000'
+  : DEMO_API;
+
+// ── State ───────────────────────────────────────────────────────────────────
+const state = {
+  view: 'priorities',
+  clientId: null,
+  analysis: null,
+  priorities: [],
+  clients: [],
+  filter: 'all',
+};
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+function navigate(view, clientId = null) {
+  if (clientId) state.clientId = clientId;
+  state.view = view;
+
+  // Show the right view
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById(`view-${view}`).classList.add('active');
+
+  // Update sidebar
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navMap = { 'priorities': 'nav-priorities', 'clients': 'nav-clients', 'insights': 'nav-insights' };
+  if (navMap[view]) document.getElementById(navMap[view])?.classList.add('active');
+
+  // Update page title
+  const titles = {
+    'priorities':    'Daily Priorities',
+    'clients':       'Clients',
+    'insights':      'Insights',
+    'client-detail': 'Client Analysis',
+    'action-panel':  'Execute Action',
+  };
+  document.getElementById('page-title').textContent = titles[view] || 'Guardian';
+
+  // Load data
+  if (view === 'priorities') loadPriorities();
+  else if (view === 'clients') loadClients();
+  else if (view === 'insights') loadInsights();
+  else if (view === 'client-detail') loadClientDetail(state.clientId);
+  else if (view === 'action-panel') renderActionPanel();
+}
+
+// ── API helpers ──────────────────────────────────────────────────────────────
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(`${API}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+// ── Priorities View ──────────────────────────────────────────────────────────
+async function loadPriorities() {
+  const listEl   = document.getElementById('priorities-list');
+  const errEl    = document.getElementById('priorities-error');
+  const insightEl= document.getElementById('ai-insight-panel');
+
+  listEl.innerHTML = `
+    <div class="skeleton" style="height:6rem;"></div>
+    <div class="skeleton" style="height:6rem;"></div>
+    <div class="skeleton" style="height:6rem;"></div>
+  `;
+  errEl.style.display    = 'none';
+  insightEl.style.display = 'none';
+
+  try {
+    const data = await apiFetch('/daily-priorities');
+    state.priorities = data;
+
+    // Stats
+    const urgent  = data.filter(p => p.priority_level === 'URGENT').length;
+    const highrisk= data.filter(p => ['CRITICAL','HIGH'].includes(p.churn_level)).length;
+    document.getElementById('stat-total').textContent    = data.length;
+    document.getElementById('stat-highrisk').textContent = highrisk;
+    document.getElementById('stat-urgent').textContent   = urgent;
+
+    renderPrioritiesList();
+
+    // AI insight
+    if (data.length > 0) {
+      const top = data[0];
+      document.getElementById('ai-insight-text').textContent =
+        `Our predictive engine has identified ${urgent} client${urgent !== 1 ? 's' : ''} requiring urgent intervention today. ` +
+        `The highest-priority client is ${top.client_name} with a churn score of ${top.churn_score}%. ` +
+        `Primary driver: ${top.main_reason}. ` +
+        (highrisk > 1 ? `There are ${highrisk} clients in the critical or high-risk tier — a proactive outreach campaign is recommended.` : '');
+      insightEl.style.display = 'block';
+    }
+  } catch (err) {
+    listEl.innerHTML = '';
+    errEl.style.display = 'flex';
+    console.error('loadPriorities failed:', err);
+  }
+}
+
+function renderPrioritiesList() {
+  const listEl = document.getElementById('priorities-list');
+  const filter = state.filter;
+  const sort   = document.getElementById('sort-select').value;
+
+  let data = [...state.priorities];
+
+  // Filter
+  if (filter !== 'all') data = data.filter(p => p.priority_level === filter);
+
+  // Search
+  const q = document.getElementById('search-input').value.toLowerCase().trim();
+  if (q) data = data.filter(p => p.client_name.toLowerCase().includes(q));
+
+  // Sort
+  if (sort === 'churn')  data.sort((a, b) => b.churn_score - a.churn_score);
+  if (sort === 'name')   data.sort((a, b) => a.client_name.localeCompare(b.client_name));
+
+  if (data.length === 0) {
+    listEl.innerHTML = `<div style="text-align:center;padding:3rem 1rem;color:#424656;font-size:0.9375rem;">No clients match this filter.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = data.map(item => {
+    const pc = priorityColor(item.priority_level);
+    const cc = churnColor(item.churn_level);
+    const trend = item.churn_score > 60 ? 'trending_up' : 'trending_flat';
+    return `
+    <div onclick="navigate('client-detail','${item.client_id}')"
+      style="background:white; padding:1.5rem; border-radius:2rem; cursor:pointer;
+             box-shadow:0 2px 12px rgba(25,28,29,0.04); transition:all 0.25s;"
+      onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 36px rgba(25,28,29,0.1)'"
+      onmouseout="this.style.transform='none';this.style.boxShadow='0 2px 12px rgba(25,28,29,0.04)'">
+      <div style="display:flex; flex-wrap:wrap; align-items:center; gap:1.5rem;">
+
+        <!-- Avatar + Name -->
+        <div style="display:flex; align-items:center; gap:1rem; min-width:13rem; flex-shrink:0;">
+          <div style="width:3.5rem; height:3.5rem; border-radius:1rem; background:${pc.bg}; display:flex; align-items:center; justify-content:center; position:relative; flex-shrink:0;">
+            <span style="font-size:1.25rem; font-weight:900; color:${pc.text};">${item.client_name.charAt(0)}</span>
+            <div style="position:absolute; bottom:0; right:0; width:0.875rem; height:0.875rem; background:${pc.dot}; border-radius:50%; border:2px solid white;"></div>
+          </div>
+          <div>
+            <div style="font-weight:700; font-size:1.0625rem; color:#191c1d;">${item.client_name}</div>
+            <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:${pc.text};">${item.priority_level}</div>
+          </div>
+        </div>
+
+        <!-- Churn score -->
+        <div style="width:7rem; flex-shrink:0;">
+          <div style="font-size:0.625rem; text-transform:uppercase; letter-spacing:0.1em; color:#424656; font-weight:700; margin-bottom:0.25rem;">Churn Score</div>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <span style="font-size:1.5rem; font-weight:900; color:${cc};" class="headline">${item.churn_score}%</span>
+            <span class="material-symbols-outlined" style="font-size:1rem; color:${cc};">${trend}</span>
+          </div>
+        </div>
+
+        <!-- Main signal -->
+        <div style="flex:1; min-width:12rem;">
+          <div style="font-size:0.625rem; text-transform:uppercase; letter-spacing:0.1em; color:#424656; font-weight:700; margin-bottom:0.25rem;">Main Signal</div>
+          <p style="font-size:0.875rem; color:#424656; line-height:1.5;">${item.main_reason}</p>
+        </div>
+
+        <!-- Suggested action -->
+        <div style="width:14rem; flex-shrink:0; display:none;" class="lg-show">
+          <div style="font-size:0.625rem; text-transform:uppercase; letter-spacing:0.1em; color:#424656; font-weight:700; margin-bottom:0.25rem;">Suggested Action</div>
+          <p style="font-size:0.875rem; font-weight:700; color:#004bca;">${item.suggested_action}</p>
+        </div>
+
+        <!-- CTA -->
+        <div style="flex-shrink:0;">
+          <button onclick="event.stopPropagation(); navigate('action-panel','${item.client_id}')"
+            style="padding:0.625rem 1.25rem; background:${pc.btn}; color:white; font-weight:700; font-size:0.875rem; border:none; border-radius:0.75rem; cursor:pointer; transition:all 0.2s;"
+            onmouseover="this.style.filter='brightness(1.1)'; this.style.transform='scale(1.03)'"
+            onmouseout="this.style.filter='none'; this.style.transform='none'">
+            Execute
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Clients View ─────────────────────────────────────────────────────────────
+async function loadClients() {
+  const listEl = document.getElementById('clients-list');
+  listEl.innerHTML = `
+    <div class="skeleton" style="height:8rem; border-radius:1.5rem;"></div>
+    <div class="skeleton" style="height:8rem; border-radius:1.5rem;"></div>
+    <div class="skeleton" style="height:8rem; border-radius:1.5rem;"></div>
+  `;
+  try {
+    const data = await apiFetch('/clients');
+    state.clients = data;
+    listEl.innerHTML = data.map(c => {
+      const riskBadge = { CONSERVATIVE: '#15803d', MODERATE: '#1d4ed8', AGGRESSIVE: '#ba1a1a' };
+      const col = riskBadge[c.risk_profile] || '#424656';
+      return `
+      <div onclick="navigate('client-detail','${c.id}')"
+        style="background:white; padding:1.5rem; border-radius:1.5rem; cursor:pointer; box-shadow:0 2px 12px rgba(25,28,29,0.04); transition:all 0.2s;"
+        onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(25,28,29,0.09)'"
+        onmouseout="this.style.transform='none';this.style.boxShadow='0 2px 12px rgba(25,28,29,0.04)'">
+        <div style="display:flex; align-items:center; gap:0.875rem; margin-bottom:1rem;">
+          <div style="width:2.75rem; height:2.75rem; border-radius:0.875rem; background:linear-gradient(135deg,#004bca,#0061ff); display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:1.125rem;">${c.name.charAt(0)}</div>
+          <div>
+            <div style="font-weight:700; color:#191c1d;">${c.name}</div>
+            <div style="font-size:0.75rem; color:#424656;">${c.segment || 'Client'}</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <span style="font-size:0.7rem; padding:0.2rem 0.625rem; border-radius:9999px; font-weight:700; background:${col}18; color:${col};">${c.risk_profile}</span>
+          <span style="font-size:0.7rem; padding:0.2rem 0.625rem; border-radius:9999px; font-weight:600; background:#edeeef; color:#424656;">${formatAssets(c.simulated_assets)}</span>
+          <span style="font-size:0.7rem; padding:0.2rem 0.625rem; border-radius:9999px; font-weight:600; background:#edeeef; color:#424656;">${c.last_contact_days}d no contact</span>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    listEl.innerHTML = `<div style="color:#ba1a1a; padding:2rem; font-size:0.875rem;">Failed to load clients: ${err.message}</div>`;
+  }
+}
+
+// ── Insights View ────────────────────────────────────────────────────────────
+async function loadInsights() {
+  // Reuse cached priorities if available, otherwise fetch
+  let data = state.priorities;
+  if (!data.length) {
+    try { data = await apiFetch('/daily-priorities'); state.priorities = data; } catch (_) {}
+  }
+  if (!data.length) return;
+
+  const total  = data.length;
+  const urgent = data.filter(p => p.priority_level === 'URGENT').length;
+  const ai     = data.filter(p => p.used_ai).length;
+  const avgChurn= Math.round(data.reduce((s, p) => s + p.churn_score, 0) / total);
+
+  // Stat cards
+  document.getElementById('insights-stats').innerHTML = [
+    { label: 'Total Clients',   value: total,       color: '#004bca', icon: 'groups' },
+    { label: 'Urgent Actions',  value: urgent,      color: '#ba1a1a', icon: 'bolt' },
+    { label: 'Avg Churn Score', value: `${avgChurn}%`, color: '#b45309', icon: 'trending_up' },
+    { label: 'AI Analyzed',     value: ai,          color: '#6b21dc', icon: 'smart_toy' },
+  ].map(s => `
+    <div style="background:white; padding:1.5rem; border-radius:1.5rem; box-shadow:0 2px 16px rgba(25,28,29,0.04); border:1px solid rgba(194,198,217,0.12);">
+      <div style="display:flex; align-items:center; gap:0.625rem; margin-bottom:0.75rem;">
+        <div style="width:2rem; height:2rem; border-radius:0.5rem; background:${s.color}12; display:flex; align-items:center; justify-content:center;">
+          <span class="material-symbols-outlined" style="font-size:1rem; color:${s.color};">${s.icon}</span>
+        </div>
+        <span style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:#424656; font-weight:700;">${s.label}</span>
+      </div>
+      <div class="headline" style="font-size:2.5rem; font-weight:900; color:${s.color};">${s.value}</div>
+    </div>`).join('');
+
+  // Churn distribution bars
+  const churnLevels = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+  const churnColors = { CRITICAL:'#ba1a1a', HIGH:'#b45309', MEDIUM:'#1d4ed8', LOW:'#15803d' };
+  const churnCounts = Object.fromEntries(churnLevels.map(l => [l, data.filter(p => p.churn_level === l).length]));
+  document.getElementById('insights-churn-bars').innerHTML = churnLevels.map(l => {
+    const pct = total > 0 ? Math.round((churnCounts[l] / total) * 100) : 0;
+    return `
+    <div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:0.375rem;">
+        <span style="font-size:0.8125rem; font-weight:600; color:#191c1d;">${l}</span>
+        <span style="font-size:0.8125rem; font-weight:700; color:${churnColors[l]};">${churnCounts[l]}</span>
+      </div>
+      <div style="height:0.5rem; background:#edeeef; border-radius:9999px; overflow:hidden;">
+        <div style="height:100%; width:${pct}%; background:${churnColors[l]}; border-radius:9999px; transition:width 0.8s ease;"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Priority distribution bars
+  const prioLevels = ['URGENT', 'HIGH', 'MEDIUM', 'LOW'];
+  const prioColors = { URGENT:'#ba1a1a', HIGH:'#b45309', MEDIUM:'#004bca', LOW:'#15803d' };
+  const prioCounts = Object.fromEntries(prioLevels.map(l => [l, data.filter(p => p.priority_level === l).length]));
+  document.getElementById('insights-priority-bars').innerHTML = prioLevels.map(l => {
+    const pct = total > 0 ? Math.round((prioCounts[l] / total) * 100) : 0;
+    return `
+    <div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:0.375rem;">
+        <span style="font-size:0.8125rem; font-weight:600; color:#191c1d;">${l}</span>
+        <span style="font-size:0.8125rem; font-weight:700; color:${prioColors[l]};">${prioCounts[l]}</span>
+      </div>
+      <div style="height:0.5rem; background:#edeeef; border-radius:9999px; overflow:hidden;">
+        <div style="height:100%; width:${pct}%; background:${prioColors[l]}; border-radius:9999px; transition:width 0.8s ease;"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Channel breakdown
+  const chMap = {};
+  data.forEach(p => { chMap[p.suggested_channel] = (chMap[p.suggested_channel] || 0) + 1; });
+  const sortedCh = Object.entries(chMap).sort((a, b) => b[1] - a[1]);
+  document.getElementById('insights-channels').innerHTML = sortedCh.map(([ch, n]) => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:0.625rem 0.875rem; border-radius:0.75rem; background:#f3f4f5;">
+      <div style="display:flex; align-items:center; gap:0.625rem;">
+        <span class="material-symbols-outlined" style="font-size:1rem; color:#424656;">${channelIcon(ch)}</span>
+        <span style="font-size:0.875rem; font-weight:600;">${formatChannel(ch)}</span>
+      </div>
+      <span style="font-size:0.875rem; font-weight:700; color:#004bca;">${n}</span>
+    </div>`).join('');
+
+  // Top 5 churn
+  const top5 = [...data].sort((a, b) => b.churn_score - a.churn_score).slice(0, 5);
+  document.getElementById('insights-top5').innerHTML = top5.map((p, i) => {
+    const cc = churnColor(p.churn_level);
+    return `
+    <div onclick="navigate('client-detail','${p.client_id}')" style="display:flex; align-items:center; gap:0.875rem; padding:0.625rem 0.875rem; border-radius:0.75rem; background:#f3f4f5; cursor:pointer; transition:background 0.15s;"
+      onmouseover="this.style.background='#e7e8e9'" onmouseout="this.style.background='#f3f4f5'">
+      <span style="font-size:0.8125rem; font-weight:900; color:#424656; width:1.25rem;">${i + 1}</span>
+      <div style="width:2rem; height:2rem; border-radius:0.625rem; background:${cc}18; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:0.875rem; color:${cc}; flex-shrink:0;">${p.client_name.charAt(0)}</div>
+      <span style="font-size:0.875rem; font-weight:600; flex:1;">${p.client_name}</span>
+      <span style="font-size:0.875rem; font-weight:900; color:${cc};">${p.churn_score}%</span>
+      <span class="material-symbols-outlined" style="font-size:0.875rem; color:#424656;">chevron_right</span>
+    </div>`;
+  }).join('');
+
+  // AI banner
+  const aiPct = total > 0 ? Math.round((ai / total) * 100) : 0;
+  document.getElementById('insights-ai-text').textContent =
+    `${ai} of ${total} clients (${aiPct}%) were interpreted by Gemini AI. ` +
+    `The remaining ${total - ai} used the deterministic fallback engine. ` +
+    `Set GEMINI_API_KEY in .env to increase AI coverage.`;
+  document.getElementById('insights-ai-banner').style.display = 'flex';
+}
+
+// ── Client Detail View ───────────────────────────────────────────────────────
+async function loadClientDetail(clientId) {
+  document.getElementById('detail-skeleton').style.display = 'block';
+  document.getElementById('detail-grid').style.display     = 'none';
+  document.getElementById('detail-error').style.display    = 'none';
+  document.getElementById('detail-name').textContent        = 'Loading...';
+  document.getElementById('detail-breadcrumb').textContent  = '...';
+
+  try {
+    const analysis = await apiFetch(`/clients/${clientId}/analyze`, { method: 'POST' });
+    state.analysis  = analysis;
+    state.clientId  = clientId;
+    renderClientDetail(analysis);
+  } catch (err) {
+    document.getElementById('detail-skeleton').style.display = 'none';
+    document.getElementById('detail-error').style.display    = 'flex';
+    document.getElementById('detail-error-msg').textContent  = err.message;
+  }
+}
+
+function renderClientDetail(analysis) {
+  const { client, churn_analysis, context_interpretation, consolidated_signals, interactions } = analysis;
+
+  // Header
+  document.getElementById('detail-breadcrumb').textContent = client.name;
+  document.getElementById('detail-name').textContent       = client.name;
+  document.getElementById('detail-avatar').textContent     = client.name.charAt(0);
+  document.getElementById('detail-segment-badge').textContent = client.segment || 'Client';
+  document.getElementById('detail-risk').innerHTML =
+    `<span class="material-symbols-outlined" style="font-size:0.875rem;">security</span> Risk Profile: <strong>${formatRisk(client.risk_profile)}</strong>`;
+  document.getElementById('detail-meta').textContent =
+    `Assets: ${formatAssets(client.simulated_assets)}  •  Last contact: ${client.last_contact_days} day${client.last_contact_days !== 1 ? 's' : ''} ago`;
+
+  // Gauge
+  const score = churn_analysis.churn_score;
+  const cc    = churnColor(churn_analysis.churn_level);
+  document.getElementById('detail-churn-score').textContent   = `${score}%`;
+  document.getElementById('detail-churn-score').style.color   = cc;
+  const gaugePath = document.getElementById('gauge-path');
+  gaugePath.style.stroke = cc;
+  setTimeout(() => {
+    gaugePath.style.strokeDashoffset = String(251.3 - (score / 100) * 251.3);
+  }, 80);
+
+  // Churn badge
+  const badge = document.getElementById('detail-churn-badge');
+  badge.textContent = churn_analysis.churn_level;
+  badge.className   = `badge-${churn_analysis.churn_level.toLowerCase()}`;
+  badge.style.cssText = ''; // reset inline, let class handle it
+
+  document.getElementById('detail-priority-score').textContent = `${churn_analysis.priority_score}/100`;
+
+  // AI summary
+  const summary = context_interpretation?.short_summary || churn_analysis.main_reason || '';
+  document.getElementById('detail-ai-summary').textContent = `"${summary}"`;
+
+  // Signals
+  const signals = buildSignals(consolidated_signals);
+  document.getElementById('detail-signals').innerHTML = signals.length
+    ? signals.map(s => `
+      <li style="display:flex; align-items:flex-start; gap:0.75rem;">
+        <div style="padding:0.375rem; border-radius:0.5rem; background:rgba(186,26,26,0.08); flex-shrink:0;">
+          <span class="material-symbols-outlined" style="color:#ba1a1a; font-size:0.875rem;">${s.icon}</span>
+        </div>
+        <div>
+          <p style="font-size:0.875rem; font-weight:700; color:#191c1d;">${s.label}</p>
+          <p style="font-size:0.75rem; color:#424656; margin-top:0.125rem;">${s.detail}</p>
+        </div>
+      </li>`).join('')
+    : `<li style="font-size:0.875rem; color:#424656;">No critical signals detected.</li>`;
+
+  // Action card
+  document.getElementById('detail-action-title').textContent = churn_analysis.suggested_action;
+  document.getElementById('detail-main-reason').textContent  = churn_analysis.main_reason;
+  document.getElementById('detail-channel').textContent      = `Channel: ${formatChannel(churn_analysis.suggested_channel)}`;
+
+  // Retention chip
+  const retention = Math.round(100 - score * 0.55);
+  document.getElementById('detail-retention-chip').innerHTML =
+    `Retention Probability: <span style="color:#ba1a1a;">${retention}%</span>`;
+
+  // Reasons
+  const reasons = (churn_analysis.reasons || []).slice(0, 3);
+  document.getElementById('detail-intervention-text').textContent = churn_analysis.suggested_action;
+  document.getElementById('detail-reasons-list').innerHTML = reasons.map(r => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:0.625rem 0.875rem; border-radius:0.75rem; background:#f3f4f5;">
+      <span style="font-size:0.8125rem; font-weight:500;">${r}</span>
+    </div>`).join('');
+
+  // Interactions
+  document.getElementById('detail-interactions').innerHTML = (interactions || []).slice(0, 5).map(i => `
+    <div style="display:flex; align-items:flex-start; gap:0.5rem;">
+      <span class="material-symbols-outlined" style="color:#424656; font-size:0.875rem; margin-top:0.1rem; flex-shrink:0;">${channelIcon(i.channel)}</span>
+      <p style="font-size:0.8125rem; line-height:1.5;">${(i.content || '').slice(0, 130)}…</p>
+    </div>`).join('') || `<p style="font-size:0.8125rem;">No recent interactions recorded.</p>`;
+
+  // Show grid
+  document.getElementById('detail-skeleton').style.display = 'none';
+  document.getElementById('detail-grid').style.display     = 'grid';
+}
+
+// ── Action Panel View ─────────────────────────────────────────────────────────
+function renderActionPanel() {
+  const analysis = state.analysis;
+  if (!analysis) { navigate('client-detail', state.clientId); return; }
+
+  const { client, churn_analysis } = analysis;
+  const cc = churnColor(churn_analysis.churn_level);
+
+  document.getElementById('action-client-name').textContent   = client.name;
+  document.getElementById('action-subtitle').textContent      = churn_analysis.suggested_action;
+  document.getElementById('action-churn-badge').innerHTML     = `<span style="color:${cc};">${churn_analysis.churn_level} — ${churn_analysis.churn_score}%</span>`;
+  document.getElementById('action-last-contact').textContent  = `${client.last_contact_days} Days Ago`;
+
+  // Channels
+  const all = ['PHONE', 'WHATSAPP', 'EMAIL', 'IN_PERSON'];
+  const suggested = churn_analysis.suggested_channel;
+  document.getElementById('action-channel-title').textContent =
+    `${formatChannel(suggested)} Outreach`;
+  document.getElementById('channels-list').innerHTML = all.map(ch => {
+    const active = ch === suggested;
+    return `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:0.875rem 1rem; border-radius:0.875rem; cursor:pointer; transition:all 0.2s;
+      background:${active ? 'white' : 'rgba(248,249,250,0.6)'};
+      border:1px solid ${active ? 'rgba(0,75,202,0.22)' : 'rgba(194,198,217,0.25)'};
+      box-shadow:${active ? '0 1px 4px rgba(0,0,0,0.06)' : 'none'};"
+      onmouseover="if(!${active}) { this.style.borderColor='rgba(194,198,217,0.55)'; this.style.background='rgba(248,249,250,0.9)'; }"
+      onmouseout="if(!${active}) { this.style.borderColor='rgba(194,198,217,0.25)'; this.style.background='rgba(248,249,250,0.6)'; }">
+      <div style="display:flex; align-items:center; gap:0.75rem;">
+        <div style="width:2.5rem; height:2.5rem; border-radius:50%; background:${active ? 'rgba(0,75,202,0.08)' : '#e7e8e9'}; display:flex; align-items:center; justify-content:center;">
+          <span class="material-symbols-outlined" style="font-size:1rem; color:${active ? '#004bca' : '#424656'};">${channelIcon(ch)}</span>
+        </div>
+        <div>
+          <div style="font-size:0.875rem; font-weight:700;">${formatChannel(ch)}</div>
+          ${active ? `<div style="font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:#004bca;">AI Recommended</div>` : ''}
+        </div>
+      </div>
+      ${active ? `<span class="material-symbols-outlined icon-filled" style="color:#004bca; font-size:1.125rem;">check_circle</span>` : ''}
+    </div>`;
+  }).join('');
+
+  // Message
+  const msg = churn_analysis.generated_message
+    || `Olá ${client.name}, gostaria de agendar um momento para conversarmos sobre seu portfólio e as oportunidades do próximo trimestre. Tem disponibilidade nos próximos dias?`;
+  const editor = document.getElementById('message-editor');
+  editor.value = msg;
+  updateCharCount();
+
+  document.getElementById('action-ai-badge').textContent =
+    analysis.used_ai ? '· Powered by Gemini' : '· Rule-based script';
+
+  // Tips
+  const tips = [
+    `${client.name} não interage há ${client.last_contact_days} dias. Uma abordagem direta e empática é recomendada.`,
+    `Perfil de risco ${formatRisk(client.risk_profile)} — foque em mensagens de estabilidade e proteção do portfólio.`,
+    `Risco de churn em ${churn_analysis.churn_score}%. Agir nas próximas 24h aumenta significativamente as chances de retenção.`,
+  ];
+  document.getElementById('action-tip').textContent = tips[Math.floor(Math.random() * tips.length)];
+
+  // Ring
+  const prob = Math.round(100 - churn_analysis.churn_score * 0.5);
+  document.getElementById('action-conversion').textContent = `${prob}%`;
+  const ring = document.getElementById('conversion-ring');
+  ring.style.stroke = prob >= 50 ? '#004bca' : '#ba1a1a';
+  setTimeout(() => {
+    ring.style.strokeDashoffset = String(144.5 - (prob / 100) * 144.5);
+  }, 80);
+}
+
+// ── UI Helpers ───────────────────────────────────────────────────────────────
+function priorityColor(level) {
+  const map = {
+    URGENT: { bg:'rgba(186,26,26,0.09)',  text:'#ba1a1a', dot:'#ba1a1a', btn:'#ba1a1a' },
+    HIGH:   { bg:'rgba(180,95,0,0.09)',   text:'#b45309', dot:'#d97706', btn:'#b45309' },
+    MEDIUM: { bg:'rgba(0,75,202,0.09)',   text:'#004bca', dot:'#004bca', btn:'#004bca' },
+    LOW:    { bg:'rgba(21,128,61,0.09)',  text:'#15803d', dot:'#16a34a', btn:'#15803d' },
+  };
+  return map[level] || map.MEDIUM;
+}
+
+function churnColor(level) {
+  return { CRITICAL:'#ba1a1a', HIGH:'#b45309', MEDIUM:'#1d4ed8', LOW:'#15803d' }[level] || '#424656';
+}
+
+function channelIcon(ch) {
+  return { PHONE:'phone_in_talk', WHATSAPP:'chat_bubble', EMAIL:'mail', IN_PERSON:'handshake' }[ch] || 'contact_support';
+}
+
+function formatChannel(ch) {
+  return { PHONE:'Direct Call', WHATSAPP:'WhatsApp', EMAIL:'Email', IN_PERSON:'In Person' }[ch] || ch;
+}
+
+function formatRisk(rp) {
+  return { CONSERVATIVE:'Conservative', MODERATE:'Moderate', AGGRESSIVE:'Aggressive' }[rp] || rp;
+}
+
+function formatAssets(v) {
+  if (!v) return '—';
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
+  if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`;
+  return `$${v}`;
+}
+
+function buildSignals(s) {
+  const list = [];
+  if (s.no_contact_risk)              list.push({ icon:'hourglass_empty',            label:'No Recent Contact',       detail:'Client has not been reached for an extended period.' });
+  if (s.negative_sentiment_detected)  list.push({ icon:'sentiment_very_dissatisfied',label:'Negative Sentiment',      detail:'Negative tone detected in recent communications.' });
+  if (s.contribution_drop)            list.push({ icon:'trending_down',              label:'Contribution Drop',       detail:'Investment contributions have recently decreased.' });
+  if (s.maturity_urgency)             list.push({ icon:'schedule',                   label:'Maturity Urgency',        detail:'An investment product is approaching its maturity date.' });
+  if (s.life_event_detected)          list.push({ icon:'family_restroom',            label:'Life Event Detected',     detail:`Confidence: ${(s.life_event_confidence * 100).toFixed(0)}%` });
+  if (s.financial_insecurity_detected)list.push({ icon:'account_balance_wallet',     label:'Financial Insecurity',    detail:'Possible liquidity or financial stress signals detected.' });
+  return list;
+}
+
+// ── User interactions ─────────────────────────────────────────────────────────
+document.querySelectorAll('.filter-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.filter = btn.dataset.filter;
+    renderPrioritiesList();
+  });
+});
+
+document.getElementById('sort-select').addEventListener('change', renderPrioritiesList);
+
+document.getElementById('search-input').addEventListener('input', () => {
+  if (state.view === 'priorities') renderPrioritiesList();
+  else if (state.view === 'clients') {
+    const q = document.getElementById('search-input').value.toLowerCase().trim();
+    document.querySelectorAll('#clients-list > div').forEach(el => {
+      el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+});
+
+function updateCharCount() {
+  const n = document.getElementById('message-editor').value.length;
+  document.getElementById('char-count').textContent = `${n} character${n !== 1 ? 's' : ''}`;
+}
+document.getElementById('message-editor').addEventListener('input', updateCharCount);
+
+async function copyMessage() {
+  const text = document.getElementById('message-editor').value;
+  try { await navigator.clipboard.writeText(text); } catch (_) {}
+  showToast('check_circle', 'Message copied to clipboard!');
+}
+
+function markContacted() {
+  showToast('verified', `${state.analysis?.client?.name ?? 'Client'} marked as contacted.`);
+  setTimeout(() => navigate('priorities'), 1600);
+}
+
+async function regenerateMessage() {
+  if (!state.clientId) return;
+  const iconEl = document.getElementById('regen-icon');
+  iconEl.classList.add('animate-spin');
+  iconEl.textContent = 'autorenew';
+  try {
+    const fresh = await apiFetch(`/clients/${state.clientId}/analyze`, { method: 'POST' });
+    state.analysis = fresh;
+    const msg = fresh.churn_analysis.generated_message;
+    if (msg) {
+      document.getElementById('message-editor').value = msg;
+      updateCharCount();
+      showToast('auto_fix_high', 'Message regenerated successfully.');
+    }
+  } catch (err) {
+    showToast('error', 'Could not regenerate. Using current message.');
+  } finally {
+    iconEl.classList.remove('animate-spin');
+    iconEl.textContent = 'auto_fix_high';
+  }
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(icon, msg) {
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent  = msg;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+navigate('priorities');
+</script>
+</body>
+</html>
