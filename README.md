@@ -1,111 +1,111 @@
 # Agentic Client Guardian
 ## AI Retention Engine for Financial Advisors
 
-## Overview
-Agentic Client Guardian is a full-stack study project designed as a realistic product MVP for financial advisory retention workflows.
+## Visão Geral
+Agentic Client Guardian é um projeto full-stack de estudo, pensado como um MVP realista de produto para fluxos de retenção em assessoria financeira.
 
-The system analyzes simulated client behavior, estimates churn risk, prioritizes accounts, recommends the next best action, and generates advisor-ready personalized messages. It was built as a portfolio-grade technical project with clear business logic, resilient AI integration, public cloud deployment, validation, and teardown.
+O sistema analisa comportamento de clientes simulados, estima risco de churn, prioriza contas, recomenda a próxima melhor ação e gera mensagens personalizadas para o assessor. O projeto foi construído com mentalidade de portfólio técnico: lógica de negócio clara, integração resiliente com IA, deploy em nuvem, validação pública e processo de limpeza para custo zero após a demonstração.
 
-This repository intentionally demonstrates the full engineering cycle:
+Este repositório foi estruturado para demonstrar o ciclo completo de engenharia:
 
-- backend architecture and domain modeling
-- deterministic scoring and operational decisioning
-- Gemini integration with retry and fallback
-- modern frontend experience
-- serverless deployment on AWS
-- public demo validation
-- cleanup procedures for zero residual cost
+- arquitetura de backend e modelagem de domínio
+- scoring determinístico e tomada de decisão operacional
+- integração com Gemini com retry e fallback
+- experiência moderna de frontend
+- deploy serverless na AWS
+- validação pública da solução
+- cleanup controlado para evitar custo residual
 
-## Problem
-Financial advisors need to retain client relationships before disengagement becomes visible in hard outcomes.
+## Problema
+Assessores financeiros precisam agir antes que o churn se torne visível em resultados concretos.
 
-In practice, churn signals are fragmented across:
+Na prática, os sinais de risco ficam espalhados entre:
 
-- CRM notes
-- recent interactions
-- client sentiment
-- contribution behavior
-- product maturity timing
-- operational follow-up gaps
+- anotações de CRM
+- interações recentes
+- sentimento do cliente
+- comportamento de aporte
+- vencimentos de produtos
+- lacunas de acompanhamento operacional
 
-That creates two recurring problems:
+Isso gera dois problemas recorrentes:
 
-- prioritization becomes reactive instead of proactive
-- communication quality depends too much on manual interpretation
+- a priorização se torna reativa em vez de preventiva
+- a qualidade da comunicação depende demais de interpretação manual
 
-## Solution
-Agentic Client Guardian proposes a lightweight AI-assisted retention engine.
+## Solução
+Agentic Client Guardian propõe um motor leve de retenção com apoio de IA.
 
-The platform combines structured client data, recent interactions, context interpretation, deterministic risk scoring, and message generation into a single operational workflow. Even when the LLM is unavailable, the platform continues to operate through a fully validated fallback path.
+A plataforma combina dados estruturados do cliente, interações recentes, interpretação de contexto, scoring determinístico e geração de mensagem em um único fluxo operacional. Mesmo quando o LLM não está disponível, a aplicação continua funcionando por meio de um fallback totalmente validado.
 
-Core business outcome:
+Resultado de negócio esperado:
 
-- identify who needs attention
-- explain why
-- recommend what to do next
-- help the advisor act immediately
+- identificar quem precisa de atenção
+- explicar o motivo
+- recomendar o próximo passo
+- acelerar a ação do assessor
 
-## Key Features
-- Layered backend architecture built with FastAPI and Pydantic
-- Deterministic churn and priority engine with transparent business rules
-- Gemini integration with retry strategy and safe fallback
-- Full analysis endpoint at `POST /clients/{id}/analyze`
-- Fake data layer for repeatable MVP testing without a real database
-- Personalized message generation in Brazilian Portuguese
-- Modern static SPA frontend with `Dashboard`, `Clients`, and `Insights`
-- Stitch-inspired fintech visual system with loading and error states
-- AWS serverless deployment with Lambda + API Gateway via SAM
-- Static frontend publishing through S3 website hosting
-- Docker, Docker Compose, GitHub Actions CI, and automated tests
-- `pytest` suite with `36` passing tests
+## Principais Funcionalidades
+- Arquitetura em camadas com FastAPI e Pydantic
+- Engine determinística de churn e prioridade com regras transparentes
+- Integração com Gemini com estratégia de retry e fallback seguro
+- Endpoint principal de análise em `POST /clients/{id}/analyze`
+- Camada de dados fake para testes repetíveis sem banco real
+- Geração de mensagens personalizadas em português do Brasil
+- Frontend SPA moderno com `Dashboard`, `Clients` e `Insights`
+- Linguagem visual fintech inspirada em Stitch, com estados de loading e erro
+- Deploy serverless na AWS com Lambda + API Gateway via SAM
+- Publicação do frontend em S3 static website hosting
+- Docker, Docker Compose, CI com GitHub Actions e testes automatizados
+- Suíte `pytest` com `36` testes passando
 
-## Architecture
+## Arquitetura
 ```mermaid
 flowchart LR
-    UI["Static SPA Frontend<br/>Dashboard / Clients / Insights"] --> API["FastAPI API"]
-    API --> ROUTER["Route Layer"]
+    UI["Frontend SPA Estático<br/>Dashboard / Clients / Insights"] --> API["API FastAPI"]
+    API --> ROUTER["Camada de Rotas"]
     ROUTER --> ANALYSIS["Analysis Service"]
-    ANALYSIS --> REPO["Fake Repositories"]
+    ANALYSIS --> REPO["Repositórios Fake"]
     ANALYSIS --> INTERPRETER["Context Interpreter"]
-    ANALYSIS --> SCORING["Deterministic Scoring Engine"]
+    ANALYSIS --> SCORING["Engine Determinística de Scoring"]
     ANALYSIS --> MSG["Message Generator"]
     INTERPRETER --> GEMINI["Gemini API"]
     MSG --> GEMINI
-    REPO --> DATA["Simulated Clients + Interactions"]
+    REPO --> DATA["Clientes e Interações Simuladas"]
     API --> LAMBDA["AWS Lambda via Mangum"]
     LAMBDA --> APIGW["API Gateway HTTP API"]
     UI --> S3["S3 Static Website Hosting"]
 ```
 
-The backend was developed with a layered approach:
+O backend foi desenvolvido com separação clara de responsabilidades:
 
-- `db/` for deterministic fake data and repository abstraction
-- `models/` and `schemas/` for strong typing and API contracts
-- `services/` for scoring, interpretation, orchestration, and message generation
-- `api/` for FastAPI routing and response handling
+- `db/` para dados fake determinísticos e abstração de repositório
+- `models/` e `schemas/` para tipagem forte e contratos da API
+- `services/` para scoring, interpretação, orquestração e geração de mensagem
+- `api/` para rotas FastAPI e tratamento de resposta
 
-The primary end-to-end flow is:
+Fluxo principal da aplicação:
 
-1. load a client
-2. load recent interactions
-3. interpret context with Gemini when available
-4. fall back to local heuristics when needed
-5. consolidate operational signals
-6. score churn and priority
-7. generate an advisor-ready message
+1. carregar o cliente
+2. carregar as interações recentes
+3. interpretar o contexto com Gemini quando disponível
+4. aplicar fallback heurístico local quando necessário
+5. consolidar sinais operacionais
+6. calcular churn e prioridade
+7. gerar uma mensagem pronta para uso pelo assessor
 
-## Tech Stack
+## Stack Tecnológica
 - Backend: FastAPI, Python 3.11+, Pydantic, HTTPX
-- AI: Gemini API with retry and fallback
-- Frontend: Static SPA in HTML/CSS/JavaScript, inspired by Stitch design output
-- Additional local UI: Streamlit dashboard for exploratory demo flow
-- Infrastructure: AWS Lambda, API Gateway HTTP API, AWS SAM
-- Static hosting: Amazon S3 static website hosting
-- Containerization: Docker, Docker Compose
+- IA: Gemini API com retry e fallback
+- Frontend: SPA estática em HTML/CSS/JavaScript, inspirada em design gerado por Stitch
+- Interface local adicional: dashboard Streamlit para exploração do fluxo
+- Infraestrutura: AWS Lambda, API Gateway HTTP API, AWS SAM
+- Hospedagem estática: Amazon S3 static website hosting
+- Containerização: Docker, Docker Compose
 - CI: GitHub Actions
-- Testing: pytest
+- Testes: pytest
 
-## Project Structure
+## Estrutura do Projeto
 ```text
 agentic-client-guardian/
   app/
@@ -131,17 +131,17 @@ agentic-client-guardian/
   README.md
 ```
 
-## API Endpoints
-| Method | Endpoint | Purpose |
+## Endpoints da API
+| Método | Endpoint | Finalidade |
 |---|---|---|
-| `GET` | `/health` | Health check |
-| `GET` | `/clients` | List all simulated clients |
-| `GET` | `/clients/{client_id}` | Retrieve one simulated client |
-| `GET` | `/clients/{client_id}/interactions` | Retrieve client interactions |
-| `POST` | `/clients/{client_id}/analyze` | Run full client analysis |
-| `GET` | `/daily-priorities` | Return accounts sorted by operational priority |
+| `GET` | `/health` | Health check da aplicação |
+| `GET` | `/clients` | Lista todos os clientes simulados |
+| `GET` | `/clients/{client_id}` | Retorna um cliente específico |
+| `GET` | `/clients/{client_id}/interactions` | Retorna as interações do cliente |
+| `POST` | `/clients/{client_id}/analyze` | Executa a análise completa do cliente |
+| `GET` | `/daily-priorities` | Retorna a fila ordenada por prioridade operacional |
 
-Example requests:
+Exemplos de uso:
 
 ```bash
 curl http://127.0.0.1:8000/health
@@ -159,198 +159,198 @@ curl -X POST http://127.0.0.1:8000/clients/client-001/analyze
 curl http://127.0.0.1:8000/daily-priorities
 ```
 
-## Local Setup
-1. Clone the repository and enter the project folder.
+## Setup Local
+1. Clone o repositório e entre na pasta do projeto.
 
 ```bash
-git clone <your-repo-url>
+git clone <url-do-seu-repo>
 cd agentic-client-guardian
 ```
 
-2. Create and activate a virtual environment.
+2. Crie e ative um ambiente virtual.
 
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
 ```
 
-3. Install development dependencies.
+3. Instale as dependências de desenvolvimento.
 
 ```bash
 pip install -r requirements-dev.txt
 ```
 
-4. Create a local environment file from the template.
+4. Crie o arquivo de ambiente a partir do template.
 
 ```bash
 copy .env.example .env
 ```
 
-5. Run the API locally.
+5. Suba a API localmente.
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-6. Open the API docs.
+6. Abra a documentação da API.
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-Environment variables:
+Variáveis de ambiente:
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
-No API key is hardcoded in this repository. If `GEMINI_API_KEY` is missing, the application continues to work through the fallback path.
+Nenhuma chave de API é hardcoded neste repositório. Se `GEMINI_API_KEY` estiver ausente, a aplicação continua funcionando através do fluxo de fallback.
 
-## Running with Docker
-Build the API image:
+## Executando com Docker
+Build da imagem da API:
 
 ```bash
 docker build -t agentic-client-guardian .
 ```
 
-Run the API container:
+Rodar a API em container:
 
 ```bash
 docker run --rm -p 8000:8000 --env-file .env agentic-client-guardian
 ```
 
-Run the local stack with Docker Compose:
+Rodar a stack local com Docker Compose:
 
 ```bash
 docker compose up --build
 ```
 
-This project also includes:
+O projeto também inclui:
 
-- API containerization for local parity
-- compose support for local demo orchestration
-- CI-compatible dependency setup
+- containerização da API para paridade local
+- suporte a Compose para orquestração da demo
+- setup de dependências compatível com CI
 
-## Frontend Usage
-The frontend evolved from a simple demo surface into a modern SPA with three primary views:
+## Uso do Frontend
+O frontend evoluiu de uma interface simples para uma SPA moderna com três áreas principais:
 
 - `Dashboard`
 - `Clients`
 - `Insights`
 
-The production-style frontend lives in [frontend/index.html](C:/Users/vitor/OneDrive/Documentos/Playground/agentic-client-guardian/frontend/index.html) and was designed as a polished static interface for presentation, screenshots, and public demonstration.
+O frontend de apresentação está em [frontend/index.html](C:/Users/vitor/OneDrive/Documentos/Playground/agentic-client-guardian/frontend/index.html) e foi pensado como uma interface estática de alta qualidade para demonstração, screenshots e showcase técnico.
 
-Capabilities included in the frontend:
+Capacidades do frontend:
 
-- multi-view navigation
+- navegação entre views
 - loading states
 - error states
-- public API consumption
-- client detail rendering
-- action/message flow
-- insights visualization
+- consumo da API pública
+- visualização de detalhe do cliente
+- fluxo de ação e mensagem
+- camada de insights operacionais
 
-For local API-served usage, the backend exposes the static frontend under:
+Para uso local servido pela API, o backend expõe o frontend em:
 
 ```text
 http://127.0.0.1:8000/ui/
 ```
 
-An additional exploratory interface is also available through Streamlit:
+Também existe uma interface complementar em Streamlit:
 
 ```bash
 streamlit run dashboard.py
 ```
 
-## AWS Deployment (Serverless)
-The backend was adapted for serverless deployment using AWS Lambda + API Gateway with Mangum and AWS SAM.
+## Deploy AWS (Serverless)
+O backend foi adaptado para execução serverless com AWS Lambda + API Gateway usando Mangum e AWS SAM.
 
-Relevant files:
+Arquivos relevantes:
 
 - [app/lambda_handler.py](C:/Users/vitor/OneDrive/Documentos/Playground/agentic-client-guardian/app/lambda_handler.py)
 - [template.yaml](C:/Users/vitor/OneDrive/Documentos/Playground/agentic-client-guardian/template.yaml)
 
-Deployment flow:
+Fluxo de deploy:
 
 ```bash
 sam build --use-container
 sam deploy --guided
 ```
 
-Or non-interactively:
+Ou de forma não interativa:
 
 ```bash
 sam deploy --stack-name agentic-client-guardian-demo --resolve-s3 --capabilities CAPABILITY_IAM --no-confirm-changeset --no-fail-on-empty-changeset --parameter-overrides EnvironmentName=demo GeminiModel=gemini-2.5-flash
 ```
 
-Serverless implementation highlights:
+Destaques da implementação serverless:
 
-- FastAPI adapted to Lambda through `Mangum`
-- API Gateway HTTP API trigger
-- environment-based Gemini configuration
-- no secret hardcoding
-- fallback behavior validated without `GEMINI_API_KEY`
-- CORS configured correctly in FastAPI and API Gateway
-- `OPTIONS` support enabled for external frontend consumption
+- FastAPI adaptada para Lambda via `Mangum`
+- trigger HTTP API do API Gateway
+- configuração do Gemini por variável de ambiente
+- nenhum segredo hardcoded
+- fallback validado sem `GEMINI_API_KEY`
+- CORS configurado corretamente no FastAPI e no API Gateway
+- suporte a `OPTIONS` para consumo externo pelo frontend
 
-## AWS Public Demo
-This project was deployed publicly as a temporary demonstration to validate the full product loop from implementation to cloud delivery.
+## Demo Pública na AWS
+Este projeto foi publicado publicamente de forma temporária para validar o ciclo completo de produto: implementação, deploy, teste e limpeza.
 
-The demo included:
+A demo pública incluiu:
 
-- SAM stack: `agentic-client-guardian-demo`
-- Lambda function: `agentic-client-guardian-d-AgenticClientGuardianFun-W1y7QvyrVGy9`
+- stack SAM: `agentic-client-guardian-demo`
+- função Lambda: `agentic-client-guardian-d-AgenticClientGuardianFun-W1y7QvyrVGy9`
 - API Gateway HTTP API: `xkskagocii`
-- S3 frontend bucket: `agentic-client-guardian-demo-ui-872515280667-20260322`
-- static website hosting with published `index.html`
+- bucket S3 do frontend: `agentic-client-guardian-demo-ui-872515280667-20260322`
+- static website hosting com `index.html` publicado
 
-What was validated during the public demo:
+O que foi validado durante a demonstração pública:
 
-- API health endpoint
-- client listing
-- daily priorities queue
-- full analysis flow through `/clients/{id}/analyze`
-- frontend integration against the public API
-- CORS behavior for an external frontend origin
-- fallback flow when `GEMINI_API_KEY` was not configured
+- endpoint de saúde da API
+- listagem de clientes
+- fila de prioridades diárias
+- fluxo completo via `/clients/{id}/analyze`
+- integração do frontend com a API pública
+- comportamento de CORS para frontend externo
+- funcionamento do fallback sem `GEMINI_API_KEY`
 
-Important note:
+Observações importantes:
 
-- the public deployment was temporary and intended only for demo screenshots and validation
-- no real client data was ever used
-- no API key or secret was exposed
-- this README documents what was done, even if the public resources are no longer active
+- o deploy público foi temporário e usado apenas para screenshots e validação
+- nenhum dado real de cliente foi utilizado
+- nenhuma chave ou segredo foi exposto
+- este README documenta o que foi feito, mesmo que a infraestrutura pública não esteja mais ativa
 
-## Validation & Testing
-Validation was performed locally and in AWS.
+## Validação e Testes
+A solução foi validada localmente e na AWS.
 
-Automated test status:
+Status da suíte automatizada:
 
 - `36 passed`
 
-Run tests locally:
+Rodar os testes localmente:
 
 ```bash
 pytest
 ```
 
-Validated endpoints:
+Endpoints validados:
 
 - `GET /health`
 - `GET /clients`
 - `GET /daily-priorities`
 - `POST /clients/{id}/analyze`
 
-Validated behaviors:
+Comportamentos validados:
 
-- full fallback operation without Gemini
-- public API access through AWS
-- external frontend consuming the public API
-- CORS and preflight behavior
-- local Docker and Compose execution
+- fallback completo sem Gemini
+- acesso público da API pela AWS
+- frontend externo consumindo a API pública
+- CORS e preflight
+- execução local via Docker e Compose
 
-Example validation commands:
+Exemplos de validação:
 
 ```bash
 curl https://xkskagocii.execute-api.us-east-1.amazonaws.com/health
@@ -365,27 +365,27 @@ curl -X POST https://xkskagocii.execute-api.us-east-1.amazonaws.com/clients/clie
 ```
 
 ## Cleanup
-The public AWS deployment was temporary and should be removed after demonstration to guarantee zero ongoing cost.
+O deploy público na AWS foi temporário e deve ser removido após a demonstração para garantir custo zero contínuo.
 
-Primary resources to remove:
+Recursos principais a remover:
 
-- CloudFormation stack: `agentic-client-guardian-demo`
-- S3 static frontend bucket: `agentic-client-guardian-demo-ui-872515280667-20260322`
+- stack CloudFormation: `agentic-client-guardian-demo`
+- bucket S3 do frontend estático: `agentic-client-guardian-demo-ui-872515280667-20260322`
 
-Remove the serverless backend stack:
+Remover a stack serverless:
 
 ```bash
 sam delete --stack-name agentic-client-guardian-demo
 ```
 
-If the frontend bucket still exists, remove its objects and delete it:
+Se o bucket do frontend ainda existir, remova os arquivos e depois o bucket:
 
 ```bash
 aws s3 rm s3://agentic-client-guardian-demo-ui-872515280667-20260322 --recursive
 aws s3api delete-bucket --bucket agentic-client-guardian-demo-ui-872515280667-20260322 --region us-east-1
 ```
 
-After cleanup, validate that no project-specific resources remain:
+Depois do cleanup, valide que não restaram recursos específicos do projeto:
 
 ```bash
 aws lambda list-functions --query "Functions[?contains(FunctionName, 'agentic-client-guardian')].[FunctionName]"
@@ -399,26 +399,26 @@ aws apigatewayv2 get-apis --query "Items[?contains(Name, 'agentic-client-guardia
 aws s3api list-buckets --query "Buckets[?contains(Name, 'agentic-client-guardian')].[Name]"
 ```
 
-Important:
+Importante:
 
-- do not remove the shared SAM managed source bucket unless you explicitly want to clean unrelated SAM artifacts too
-- once the stack and demo bucket are removed, the project returns to zero AWS cost for this demo setup
+- não remova o bucket compartilhado gerenciado pelo SAM, a menos que queira limpar artefatos de outros projetos também
+- depois que a stack e o bucket da demo forem removidos, o projeto volta a custo zero na AWS para esse cenário de demonstração
 
-## Future Improvements
-- Replace fake repositories with a real persistence layer
-- Add authentication, advisor tenancy, and role-based access
-- Store analysis history and intervention outcomes
-- Introduce batch analysis and scheduled retention jobs
-- Add richer observability for prompts, retries, and fallback rates
-- Add a production-grade frontend build pipeline instead of a single static file
-- Expand contract and browser-based integration tests
-- Add configurable CORS origins for hardened production deployment
+## Melhorias Futuras
+- Substituir os repositórios fake por uma camada real de persistência
+- Adicionar autenticação, tenancy por assessor e controle de acesso
+- Armazenar histórico de análises e resultados de intervenção
+- Introduzir processamento em lote e jobs agendados de retenção
+- Adicionar mais observabilidade para prompts, retries e taxa de fallback
+- Criar pipeline de build frontend mais robusto em vez de um único arquivo estático
+- Expandir testes de contrato e integração com navegador
+- Tornar o CORS configurável por ambiente para uso mais rígido em produção
 
 ## Disclaimer
-This is a portfolio and study project built to simulate a realistic financial advisory retention product.
+Este é um projeto de portfólio e estudo, construído para simular um produto realista de retenção para assessoria financeira.
 
-- no real customer data is used
-- no production advisory system is integrated
-- recommendations are demonstrative and require human review
-- generated messages are operational aids, not financial advice
-- cloud deployment steps documented here were intentionally temporary and cleaned up after validation
+- nenhum dado real de cliente é utilizado
+- não existe integração com sistemas produtivos de assessoria
+- as recomendações são demonstrativas e exigem revisão humana
+- as mensagens geradas são apoio operacional, não aconselhamento financeiro
+- os passos de deploy em nuvem documentados aqui foram temporários e acompanhados de cleanup após a validação
