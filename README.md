@@ -239,7 +239,7 @@ O frontend evoluiu de uma interface simples para uma SPA moderna com três área
 - `Clients`
 - `Insights`
 
-O frontend de apresentação está em [frontend/index.html](C:/Users/vitor/OneDrive/Documentos/Playground/agentic-client-guardian/frontend/index.html) e foi pensado como uma interface estática de alta qualidade para demonstração, screenshots e showcase técnico.
+O frontend de apresentação está em [frontend/index.html](frontend/index.html) e foi pensado como uma interface estática de alta qualidade para demonstração, screenshots e showcase técnico.
 
 Capacidades do frontend:
 
@@ -268,8 +268,8 @@ O backend foi adaptado para execução serverless com AWS Lambda + API Gateway u
 
 Arquivos relevantes:
 
-- [app/lambda_handler.py](C:/Users/vitor/OneDrive/Documentos/Playground/agentic-client-guardian/app/lambda_handler.py)
-- [template.yaml](C:/Users/vitor/OneDrive/Documentos/Playground/agentic-client-guardian/template.yaml)
+- [app/lambda_handler.py](app/lambda_handler.py)
+- [template.yaml](template.yaml)
 
 Fluxo de deploy:
 
